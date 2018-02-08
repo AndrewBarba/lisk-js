@@ -3,11 +3,16 @@
 	"globals": {
 		"naclInstance": true
 	},
+	"parser": "babel-eslint",
+	"plugins": [
+		"flowtype"
+	],
 	"rules": {
 		"arrow-parens": ["error", "as-needed"],
 		"curly": "off",
 		"indent": "off",
 		"no-confusing-arrow": "off",
-		"no-mixed-operators": "off"
+		"no-mixed-operators": "off",
+		"flowtype/define-flow-type": 2
 	}
 }

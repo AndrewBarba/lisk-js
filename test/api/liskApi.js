@@ -82,7 +82,7 @@ describe('Lisk API module', () => {
 			.stub(httpClient, 'post')
 			.resolves(Object.assign({}, defaultRequestPromiseResult));
 		getHeadersStub = sandbox
-			.stub(utils, 'getHeaders')
+			.stub(utils, 'getDefaultHeaders')
 			.returns(defaultHeaders);
 		config.nodes.mainnet = defaultNodes;
 		config.nodes.testnet = defaultTestnetNodes;
@@ -199,17 +199,37 @@ describe('Lisk API module', () => {
 				return LSK.should.have.property('bannedNodes').be.eql(bannedNodes);
 			});
 		});
+
+		describe('headers', () => {
+			it('should set with passed nethash', () => {
+				LSK = new LiskAPI({ headers: customHeaders });
+				return LSK.should.have.property('headers').be.eql(customHeaders);
+			});
+
+			it('should set default mainnet nethash', () => {
+				LSK = new LiskAPI();
+				return LSK.should.have.property('headers').be.equal(defaultHeaders);
+			});
+		});
 	});
 
 	describe('get nodes', () => {
 		describe('with SSL set to true', () => {
 			it('should return default testnet nodes if testnet is set to true', () => {
-				LSK = new LiskAPI({ nodes: defaultTestnetNodes, testnet: true, ssl: true });
+				LSK = new LiskAPI({
+					nodes: defaultTestnetNodes,
+					testnet: true,
+					ssl: true,
+				});
 				return LSK.nodes.should.be.eql(defaultTestnetNodes);
 			});
 
 			it('should return default SSL nodes if testnet is not set to true', () => {
-				LSK = new LiskAPI({ nodes: defaultSSLNodes, testnet: false, ssl: true });
+				LSK = new LiskAPI({
+					nodes: defaultSSLNodes,
+					testnet: false,
+					ssl: true,
+				});
 				LSK.testnet = false;
 				return LSK.nodes.should.be.eql(defaultSSLNodes);
 			});
@@ -217,7 +237,11 @@ describe('Lisk API module', () => {
 
 		describe('with SSL set to false', () => {
 			it('should return default testnet nodes if testnet is set to true', () => {
-				LSK = new LiskAPI({ nodes: defaultTestnetNodes, testnet: true, ssl: false });
+				LSK = new LiskAPI({
+					nodes: defaultTestnetNodes,
+					testnet: true,
+					ssl: false,
+				});
 				return LSK.nodes.should.be.eql(defaultTestnetNodes);
 			});
 
@@ -730,7 +754,12 @@ describe('Lisk API module', () => {
 
 		it('should call post with a prepared request object', () => {
 			return LSK.broadcastSignedTransaction(transaction).then(() => {
-				postStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'transactions', { transaction });
+				postStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'transactions',
+					{ transaction },
+				);
 			});
 		});
 
@@ -761,7 +790,12 @@ describe('Lisk API module', () => {
 
 		it('should call sendRequestPromise with a prepared request object', () => {
 			return LSK.broadcastSignatures(signatures).then(() => {
-				postStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'signatures', { signatures });
+				postStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'signatures',
+					{ signatures },
+				);
 			});
 		});
 
@@ -807,32 +841,44 @@ describe('Lisk API module', () => {
 				limit: 5,
 				offset: 101,
 			};
-			handleTimestampIsInFutureFailuresStub = sandbox.stub(LSK, 'handleTimestampIsInFutureFailures');
+			handleTimestampIsInFutureFailuresStub = sandbox.stub(
+				LSK,
+				'handleTimestampIsInFutureFailures',
+			);
 			handlePostFailuresStub = sandbox.stub(LSK, 'handlePostFailures');
 		});
 
 		it('should call post with provided options', () => {
-			LSK.handlePost(defaultEndpoint, options)
-				.then(() => {
-					postStub.should.be.calledWithExactly(fullURL, defaultHeaders, defaultEndpoint, options);
-				});
+			LSK.handlePost(defaultEndpoint, options).then(() => {
+				postStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					defaultEndpoint,
+					options,
+				);
+			});
 		});
 
 		it('should call handleTimestampIsInFutureFailures with provided options', () => {
-			LSK.handlePost(defaultEndpoint, options)
-				.then(() => {
-					handleTimestampIsInFutureFailuresStub.should
-						.calledWithExactly(defaultRequestPromiseResult.body, defaultEndpoint, options);
-				});
+			LSK.handlePost(defaultEndpoint, options).then(() => {
+				handleTimestampIsInFutureFailuresStub.should.calledWithExactly(
+					defaultRequestPromiseResult.body,
+					defaultEndpoint,
+					options,
+				);
+			});
 		});
 
 		it('should call handle post failures with provided options if error', () => {
 			const error = new Error('oh no');
 			postStub.rejects(error);
-			LSK.handlePost(defaultEndpoint, options)
-				.then(() => {
-					handlePostFailuresStub.should.be.calledWithExactly(error, defaultEndpoint, options);
-				});
+			LSK.handlePost(defaultEndpoint, options).then(() => {
+				handlePostFailuresStub.should.be.calledWithExactly(
+					error,
+					defaultEndpoint,
+					options,
+				);
+			});
 		});
 	});
 
@@ -907,28 +953,37 @@ describe('Lisk API module', () => {
 			});
 
 			it('should resolve to an object with success set to false', () => {
-				return LSK.handlePostFailures(error, defaultEndpoint, options)
-					.then(result => {
-						result.should.have.property('success').and.be.equal(false);
-					});
+				return LSK.handlePostFailures(
+					error,
+					defaultEndpoint,
+					options,
+				).then(result => {
+					result.should.have.property('success').and.be.equal(false);
+				});
 			});
 
 			it('should resolve to an object with the provided error if no redial is possible', () => {
-				return LSK.handlePostFailures(error, defaultEndpoint, options)
-					.then(result => {
-						result.should.have.property('error').and.be.equal(error);
-					});
+				return LSK.handlePostFailures(
+					error,
+					defaultEndpoint,
+					options,
+				).then(result => {
+					result.should.have.property('error').and.be.equal(error);
+				});
 			});
 
 			it('should resolve to an object with a helpful message', () => {
-				return LSK.handlePostFailures(error, defaultEndpoint, options)
-					.then(result => {
-						result.should.have
-							.property('message')
-							.and.be.equal(
-								'Could not create an HTTP request to any known nodes.',
-							);
-					});
+				return LSK.handlePostFailures(
+					error,
+					defaultEndpoint,
+					options,
+				).then(result => {
+					result.should.have
+						.property('message')
+						.and.be.equal(
+							'Could not create an HTTP request to any known nodes.',
+						);
+				});
 			});
 		});
 	});
@@ -955,34 +1010,46 @@ describe('Lisk API module', () => {
 
 		it('should resolve the result if success is true', () => {
 			result.success = true;
-			return LSK.handleTimestampIsInFutureFailures(result, defaultEndpoint, options)
-				.then(returnValue => {
-					returnValue.should.equal(result);
-				});
+			return LSK.handleTimestampIsInFutureFailures(
+				result,
+				defaultEndpoint,
+				options,
+			).then(returnValue => {
+				returnValue.should.equal(result);
+			});
 		});
 
 		it('should resolve the result if there is no message', () => {
 			delete result.message;
-			return LSK.handleTimestampIsInFutureFailures(result, defaultEndpoint, options)
-				.then(returnValue => {
-					returnValue.should.equal(result);
-				});
+			return LSK.handleTimestampIsInFutureFailures(
+				result,
+				defaultEndpoint,
+				options,
+			).then(returnValue => {
+				returnValue.should.equal(result);
+			});
 		});
 
 		it('should resolve the result if the message is not about the timestamp being in the future', () => {
 			result.message = 'Timestamp is in the past';
-			return LSK.handleTimestampIsInFutureFailures(result, defaultEndpoint, options)
-				.then(returnValue => {
-					returnValue.should.equal(result);
-				});
+			return LSK.handleTimestampIsInFutureFailures(
+				result,
+				defaultEndpoint,
+				options,
+			).then(returnValue => {
+				returnValue.should.equal(result);
+			});
 		});
 
 		it('should resolve the result if the time offset is greater than 40 seconds', () => {
 			options.timeOffset = 41;
-			return LSK.handleTimestampIsInFutureFailures(result, defaultEndpoint, options)
-				.then(returnValue => {
-					returnValue.should.equal(result);
-				});
+			return LSK.handleTimestampIsInFutureFailures(
+				result,
+				defaultEndpoint,
+				options,
+			).then(returnValue => {
+				returnValue.should.equal(result);
+			});
 		});
 
 		it('should resend the request with a time offset of 10 seconds if all those conditions are met and the time offset is not specified', () => {
@@ -990,28 +1057,34 @@ describe('Lisk API module', () => {
 			const expectedOptions = Object.assign({}, options, {
 				timeOffset: 10,
 			});
-			return LSK.handleTimestampIsInFutureFailures(result, defaultEndpoint, options)
-				.then(returnValue => {
-					returnValue.should.be.eql(postResult);
-					handlePostStub.should.be.calledWithExactly(
-						defaultEndpoint,
-						expectedOptions,
-					);
-				});
+			return LSK.handleTimestampIsInFutureFailures(
+				result,
+				defaultEndpoint,
+				options,
+			).then(returnValue => {
+				returnValue.should.be.eql(postResult);
+				handlePostStub.should.be.calledWithExactly(
+					defaultEndpoint,
+					expectedOptions,
+				);
+			});
 		});
 
 		it('should resend the request with the time offset increased by 10 seconds if all those conditions are met and the time offset is specified', () => {
 			const expectedOptions = Object.assign({}, options, {
 				timeOffset: 50,
 			});
-			return LSK.handleTimestampIsInFutureFailures(result, defaultEndpoint, options)
-				.then(returnValue => {
-					returnValue.should.be.eql(postResult);
-					handlePostStub.should.be.calledWithExactly(
-						defaultEndpoint,
-						expectedOptions,
-					);
-				});
+			return LSK.handleTimestampIsInFutureFailures(
+				result,
+				defaultEndpoint,
+				options,
+			).then(returnValue => {
+				returnValue.should.be.eql(postResult);
+				handlePostStub.should.be.calledWithExactly(
+					defaultEndpoint,
+					expectedOptions,
+				);
+			});
 		});
 	});
 
@@ -1023,7 +1096,12 @@ describe('Lisk API module', () => {
 			it('should get account information', () => {
 				const address = '12731041415715717263L';
 				LSK.getAccount(address);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'accounts', { address });
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'accounts',
+					{ address },
+				);
 			});
 		});
 
@@ -1031,7 +1109,12 @@ describe('Lisk API module', () => {
 			it('should get active delegates', () => {
 				const options = { limit: defaultRequestLimit };
 				LSK.getActiveDelegates(defaultRequestLimit);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'delegates', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'delegates',
+					options,
+				);
 			});
 		});
 
@@ -1045,7 +1128,12 @@ describe('Lisk API module', () => {
 					limit: defaultRequestLimit,
 				};
 				LSK.getStandbyDelegates(defaultRequestLimit, options);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'delegates', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'delegates',
+					options,
+				);
 			});
 
 			it('should get standby delegates with a default offset and ordering when not specified', () => {
@@ -1055,7 +1143,12 @@ describe('Lisk API module', () => {
 					orderBy: defaultOrderBy,
 					offset: defaultRequestOffset,
 				};
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'delegates', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'delegates',
+					options,
+				);
 			});
 		});
 
@@ -1065,7 +1158,12 @@ describe('Lisk API module', () => {
 				const options = { height };
 
 				LSK.getBlock(height);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'blocks', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'blocks',
+					options,
+				);
 			});
 		});
 
@@ -1074,7 +1172,12 @@ describe('Lisk API module', () => {
 				const options = { limit: defaultRequestLimit };
 
 				LSK.getBlocks(defaultRequestLimit);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'blocks', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'blocks',
+					options,
+				);
 			});
 		});
 
@@ -1085,7 +1188,12 @@ describe('Lisk API module', () => {
 				const options = { generatorPublicKey };
 
 				LSK.getForgedBlocks(generatorPublicKey);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'blocks', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'blocks',
+					options,
+				);
 			});
 		});
 
@@ -1095,7 +1203,12 @@ describe('Lisk API module', () => {
 				const options = { transactionId };
 
 				LSK.getDapp(transactionId);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'dapps', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'dapps',
+					options,
+				);
 			});
 		});
 
@@ -1107,7 +1220,12 @@ describe('Lisk API module', () => {
 				};
 
 				LSK.getDapps(options);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'dapps', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'dapps',
+					options,
+				);
 			});
 		});
 
@@ -1124,7 +1242,12 @@ describe('Lisk API module', () => {
 					offset: defaultRequestOffset,
 				};
 				LSK.getDappsByCategory(category, options);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'dapps', expectedPassedOptions);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'dapps',
+					expectedPassedOptions,
+				);
 			});
 		});
 
@@ -1134,7 +1257,12 @@ describe('Lisk API module', () => {
 				const options = { transactionId };
 
 				LSK.getTransaction(transactionId);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'transactions', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'transactions',
+					options,
+				);
 			});
 		});
 
@@ -1158,7 +1286,12 @@ describe('Lisk API module', () => {
 				};
 
 				LSK.getTransactions(recipientAddress, options);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'transactions', expectedPassedOptions);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'transactions',
+					expectedPassedOptions,
+				);
 			});
 		});
 
@@ -1168,7 +1301,12 @@ describe('Lisk API module', () => {
 				const options = { transactionId };
 
 				LSK.getUnsignedMultisignatureTransactions(options);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'transactions/unsigned', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'transactions/unsigned',
+					options,
+				);
 			});
 		});
 
@@ -1178,7 +1316,12 @@ describe('Lisk API module', () => {
 				const options = { username };
 
 				LSK.getVoters(username);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'voters', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'voters',
+					options,
+				);
 			});
 		});
 		describe('#getVotes', () => {
@@ -1187,7 +1330,12 @@ describe('Lisk API module', () => {
 				const options = { address };
 
 				LSK.getVotes(address);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'votes', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'votes',
+					options,
+				);
 			});
 		});
 
@@ -1197,7 +1345,12 @@ describe('Lisk API module', () => {
 				const options = { search: searchTerm };
 
 				LSK.searchDelegatesByUsername(searchTerm);
-				return getStub.should.be.calledWithExactly(fullURL, defaultHeaders, 'delegates', options);
+				return getStub.should.be.calledWithExactly(
+					fullURL,
+					defaultHeaders,
+					'delegates',
+					options,
+				);
 			});
 		});
 	});

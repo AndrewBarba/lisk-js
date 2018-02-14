@@ -28,7 +28,7 @@ describe('public key validation', () => {
 			it('should throw an error', () => {
 				return validatePublicKey
 					.bind(null, invalidHexPublicKey)
-					.should.throw('Invalid hex string');
+					.should.throw('Public key must be a valid hex string.');
 			});
 		});
 
@@ -94,7 +94,7 @@ describe('public key validation', () => {
 			it('should throw an error', () => {
 				return validatePublicKeys
 					.bind(null, publicKeys)
-					.should.throw('Invalid hex string');
+					.should.throw('Public key must be a valid hex string.');
 			});
 		});
 
